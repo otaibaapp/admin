@@ -18,13 +18,13 @@ class AddToFirebaseDatabase extends StatefulWidget {
 
 class _AddToFirebaseDatabaseState extends State<AddToFirebaseDatabase> {
   TextEditingController? source = TextEditingController(),
-      sourceImageUrl = TextEditingController(),
       content = TextEditingController(),
-      contentImgUrl = TextEditingController(),
       numberOfComments = TextEditingController(),
       numberOfLoved = TextEditingController(),
       buttonContent = TextEditingController(),
       buttonContentUrl = TextEditingController();
+  File? _imageFile;
+  final ImagePicker _picker = ImagePicker();
   bool _isLoading = false;
   String imagePathContent = "";
   String? selectedColor;
@@ -38,7 +38,7 @@ class _AddToFirebaseDatabaseState extends State<AddToFirebaseDatabase> {
     'donations',
   ];
   String? _selectedValue;
-  String aaaaa = 'برتقال';
+  String aaaaa = '';
   void displaySnackBar(String msg, Color color) {
     ScaffoldMessenger.of(
       context,
@@ -56,8 +56,6 @@ class _AddToFirebaseDatabaseState extends State<AddToFirebaseDatabase> {
   DatabaseReference? _databaseRef;
   @override
   Widget build(BuildContext context) {
-    File? _imageFile;
-    final ImagePicker _picker = ImagePicker();
     bool _isUploading = false;
     String? _uploadStatusMessage;
 
@@ -93,7 +91,6 @@ class _AddToFirebaseDatabaseState extends State<AddToFirebaseDatabase> {
           _uploadStatusMessage =
               'تم الرفع بنجاح! رابط الصورة: $imagePathContent';
         });
-
         displaySnackBar('تم الرفع بنجاح!', Colors.green);
       } on FirebaseException catch (e) {
         setState(() {
@@ -107,20 +104,25 @@ class _AddToFirebaseDatabaseState extends State<AddToFirebaseDatabase> {
 
     // 1. دالة لاختيار الصورة من المعرض
     Future<void> _pickImageContent() async {
-      final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-      if (pickedFile != null) {
-        setState(() {
-          _imageFile = File(pickedFile.path);
-          if (_imageFile != null) {
-            uploadImageContent();
-          }
-          _uploadStatusMessage = null; // إعادة تعيين الرسالة
-        });
+      if (aaaaa.isNotEmpty) {
+        final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+        if (pickedFile != null) {
+          setState(() {
+            _imageFile = File(pickedFile.path);
+            if (_imageFile != null) {
+              uploadImageContent();
+            }
+            _uploadStatusMessage = null; // إعادة تعيين الرسالة
+          });
+        } else {
+          displaySnackBar('No image', Colors.red);
+        }
+        if (_imageFile == null) {
+          displaySnackBar('error', Colors.red);
+        }
       } else {
-        displaySnackBar('No image', Colors.red);
-      }
-      if (_imageFile == null) {
-        displaySnackBar('age', Colors.red);
+        displaySnackBar('اخترا التصنيف اولاً', Colors.red);
+        return;
       }
     }
 
@@ -167,20 +169,25 @@ class _AddToFirebaseDatabaseState extends State<AddToFirebaseDatabase> {
 
     // 1. دالة لاختيار الصورة من المعرض
     Future<void> _pickImageSource() async {
-      final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-      if (pickedFile != null) {
-        setState(() {
-          _imageFile = File(pickedFile.path);
-          if (_imageFile != null) {
-            uploadImageSource();
-          }
-          _uploadStatusMessage = null; // إعادة تعيين الرسالة
-        });
+      if (aaaaa.isNotEmpty) {
+        final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+        if (pickedFile != null) {
+          setState(() {
+            _imageFile = File(pickedFile.path);
+            if (_imageFile != null) {
+              uploadImageSource();
+            }
+            _uploadStatusMessage = null; // إعادة تعيين الرسالة
+          });
+        } else {
+          displaySnackBar('No image', Colors.red);
+        }
+        if (_imageFile == null) {
+          displaySnackBar('No image!!!', Colors.red);
+        }
       } else {
-        displaySnackBar('No image', Colors.red);
-      }
-      if (_imageFile == null) {
-        displaySnackBar('age', Colors.red);
+        displaySnackBar('اخترا التصنيف اولاً', Colors.red);
+        return;
       }
     }
 
@@ -257,23 +264,6 @@ class _AddToFirebaseDatabaseState extends State<AddToFirebaseDatabase> {
                   fillColor: Colors.white,
                 ),
               ),
-              const SizedBox(height: 16),
-
-              // Email
-              TextField(
-                textAlign: TextAlign.right,
-                obscureText: false,
-                controller: sourceImageUrl,
-                decoration: InputDecoration(
-                  hintText: 'رابط صورة المصدر',
-                  prefixIcon: Icon(Icons.email),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
-                ),
-              ),
 
               const SizedBox(height: 16),
 
@@ -284,24 +274,6 @@ class _AddToFirebaseDatabaseState extends State<AddToFirebaseDatabase> {
                 controller: content,
                 decoration: InputDecoration(
                   hintText: 'محتوى الإعلان',
-                  prefixIcon: Icon(Icons.fingerprint),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Confirm Password
-              TextField(
-                textAlign: TextAlign.right,
-                obscureText: false,
-                controller: contentImgUrl,
-                decoration: InputDecoration(
-                  hintText: 'رابط الصورة لمحتوى الإعلان إن وجد',
                   prefixIcon: Icon(Icons.fingerprint),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -399,7 +371,7 @@ class _AddToFirebaseDatabaseState extends State<AddToFirebaseDatabase> {
   }
 
   Future<void> add() async {
-    if (true) {
+    if (aaaaa.isNotEmpty) {
       setState(() {
         _isLoading = true;
       });
@@ -427,6 +399,11 @@ class _AddToFirebaseDatabaseState extends State<AddToFirebaseDatabase> {
           _isLoading = false;
         });
         displaySnackBar('تمت الإضافة بنجاح', Colors.green);
+        aaaaa = '';
+        setState(() {
+          selectedColor = null;
+          _selectedValue = null;
+        });
       } on FirebaseException catch (e) {
         setState(() {
           _isLoading = false;
@@ -443,7 +420,7 @@ class _AddToFirebaseDatabaseState extends State<AddToFirebaseDatabase> {
         displaySnackBar(e.toString(), Colors.red);
       }
     } else {
-      displaySnackBar('خطأ في فيربيز', Colors.red);
+      displaySnackBar('اختر التصنيف اولاً', Colors.red);
     }
   }
 }
