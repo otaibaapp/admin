@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "96297821698",
+    "firebase_url": "https://otaiba-app-default-rtdb.firebaseio.com",
+    "project_id": "otaiba-app",
+    "storage_bucket": "otaiba-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:96297821698:android:03df3730b654e7b02ea91b",
+        "android_client_info": {
+          "package_name": "com.example.otaibah_app_admin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBgQFMuqTvjdlIpRXUEoFDCeMnH5TYEsMU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:96297821698:android:8143f7f279344c522ea91b",
+        "android_client_info": {
+          "package_name": "com.example.otaibah_vellage"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBgQFMuqTvjdlIpRXUEoFDCeMnH5TYEsMU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
