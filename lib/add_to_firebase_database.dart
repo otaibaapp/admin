@@ -22,7 +22,8 @@ class _AddToFirebaseDatabaseState extends State<AddToFirebaseDatabase> {
       numberOfComments = TextEditingController(),
       numberOfLoved = TextEditingController(),
       buttonContent = TextEditingController(),
-      buttonContentUrl = TextEditingController();
+      buttonContentUrl = TextEditingController(),
+      shopName = TextEditingController();
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
   bool _isLoading = false;
@@ -30,15 +31,35 @@ class _AddToFirebaseDatabaseState extends State<AddToFirebaseDatabase> {
   String? selectedColor;
   String imagePathSourceUrl = "";
   List<String> navigation_menu_items = [
-    'ads',
-    'shop',
-    'orders',
+    'announcements',
+    'shopping',
+    'open_souq',
     'services',
     'education',
     'donations',
   ];
+  List<String> navigation_menu_items_sub_category = [
+    'مطاعم',
+    'تلفونات',
+    'سوبرماركت',
+    'دراجات',
+    'سيارت',
+    'كهربائيات',
+    'معجنات',
+    'صيانة',
+    'خضراوات',
+    'ملابس',
+    'لطفلك',
+    'حلويات',
+    'أحذية',
+    'أدوات منزلية',
+    'خرداوات',
+    'أخرى',
+  ];
   String? _selectedValue;
   String aaaaa = '';
+  String? _selectedValueSubCategory;
+  String aaaaaSubCategory = '';
   void displaySnackBar(String msg, Color color) {
     ScaffoldMessenger.of(
       context,
@@ -50,14 +71,14 @@ class _AddToFirebaseDatabaseState extends State<AddToFirebaseDatabase> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    _databaseRef = FirebaseDatabase.instance.ref('otaibah_navigators_taps');
   }
 
-  DatabaseReference? _databaseRef;
   @override
   Widget build(BuildContext context) {
     bool _isUploading = false;
     String? _uploadStatusMessage;
+    final ImagePicker picker = ImagePicker();
+    bool uploading = false;
 
     // 2. قائمة الخيارات
 
@@ -76,7 +97,15 @@ class _AddToFirebaseDatabaseState extends State<AddToFirebaseDatabase> {
         // إنشاء مسار فريد للملف
         String fileName = path.basename(_imageFile!.path);
         Reference firebaseStorageRef = FirebaseStorage.instance.ref().child(
-          'otaibah_main/navigation_menu_items/' + aaaaa + fileName,
+          'otaibah_main/navigation_menu_items/' +
+              aaaaa +
+              '/' +
+              aaaaaSubCategory +
+              '/' +
+              shopName!.text +
+              '/' +
+              'items/' +
+              fileName,
         );
 
         // رفع الملف
@@ -104,7 +133,7 @@ class _AddToFirebaseDatabaseState extends State<AddToFirebaseDatabase> {
 
     // 1. دالة لاختيار الصورة من المعرض
     Future<void> _pickImageContent() async {
-      if (aaaaa.isNotEmpty) {
+      if (aaaaa.isNotEmpty && aaaaaSubCategory.isNotEmpty) {
         final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
         if (pickedFile != null) {
           setState(() {
@@ -141,7 +170,15 @@ class _AddToFirebaseDatabaseState extends State<AddToFirebaseDatabase> {
         // إنشاء مسار فريد للملف
         String fileName = path.basename(_imageFile!.path);
         Reference firebaseStorageRef = FirebaseStorage.instance.ref().child(
-          'otaibah_main/navigation_menu_items/' + aaaaa + fileName,
+          'otaibah_main/navigation_menu_items/' +
+              aaaaa +
+              '/' +
+              aaaaaSubCategory +
+              '/' +
+              shopName!.text +
+              '/' +
+              'items/' +
+              fileName,
         );
 
         // رفع الملف
@@ -169,7 +206,7 @@ class _AddToFirebaseDatabaseState extends State<AddToFirebaseDatabase> {
 
     // 1. دالة لاختيار الصورة من المعرض
     Future<void> _pickImageSource() async {
-      if (aaaaa.isNotEmpty) {
+      if (aaaaa.isNotEmpty && aaaaaSubCategory.isNotEmpty) {
         final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
         if (pickedFile != null) {
           setState(() {
@@ -230,7 +267,38 @@ class _AddToFirebaseDatabaseState extends State<AddToFirebaseDatabase> {
                   // عرض القيمة المختارة
                 ],
               ),
+              const SizedBox(height: 6),
+              Column(
+                children: [
+                  DropdownButton<String>(
+                    // القيمة الحالية المختارة
+                    value: _selectedValueSubCategory,
 
+                    // تلميح يظهر عندما لا يتم اختيار أي قيمة
+                    hint: Text('اختر قيمة'),
+
+                    // الدالة التي يتم استدعاؤها عند تغيير القيمة
+                    onChanged: (String? newValue) {
+                      // تحديث حالة الودجت باستخدام setState
+                      setState(() {
+                        _selectedValueSubCategory = newValue;
+                        aaaaaSubCategory = newValue.toString();
+                      });
+                    },
+
+                    // قائمة العناصر التي تظهر في القائمة المنسدلة
+                    items: navigation_menu_items_sub_category
+                        .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        })
+                        .toList(),
+                  ),
+                  // عرض القيمة المختارة
+                ],
+              ),
               const SizedBox(height: 40),
               // Logo
               SvgPicture.asset(
@@ -247,6 +315,22 @@ class _AddToFirebaseDatabaseState extends State<AddToFirebaseDatabase> {
               const Text(
                 'صفحة إضافة البيانات إلى قاعدة البيانات',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              // Full Name
+              TextField(
+                textAlign: TextAlign.right,
+                obscureText: false,
+                controller: shopName,
+                decoration: InputDecoration(
+                  hintText: 'اسم المحل',
+                  prefixIcon: Icon(Icons.person),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
               ),
               const SizedBox(height: 32),
               // Full Name
@@ -371,7 +455,7 @@ class _AddToFirebaseDatabaseState extends State<AddToFirebaseDatabase> {
   }
 
   Future<void> add() async {
-    if (aaaaa.isNotEmpty) {
+    if (aaaaa.isNotEmpty && aaaaaSubCategory.isNotEmpty) {
       setState(() {
         _isLoading = true;
       });
@@ -380,11 +464,23 @@ class _AddToFirebaseDatabaseState extends State<AddToFirebaseDatabase> {
         final a = FirebaseDatabase.instance
             .ref('otaibah_navigators_taps')
             .child(aaaaa)
+            .child('categories')
+            .child(aaaaaSubCategory)
+            .child(shopName!.text)
+            .child('items')
             .push();
         // البيانات التي تريد إضافتها
+        DateTime date = DateTime.now();
+        String formattedDate =
+            date.year.toString() +
+            '/' +
+            date.month.toString() +
+            '/' +
+            date.day.toString();
         await a.set({
+          'shopName': shopName?.text,
           'source': source?.text,
-          'dateOfPost': DateTime.now().toString(),
+          'dateOfPost': formattedDate,
           'sourceImageUrl': imagePathSourceUrl,
           'content': content?.text,
           'contentImgUrl': imagePathContent,
@@ -400,7 +496,10 @@ class _AddToFirebaseDatabaseState extends State<AddToFirebaseDatabase> {
         });
         displaySnackBar('تمت الإضافة بنجاح', Colors.green);
         aaaaa = '';
+        aaaaaSubCategory = '';
+        shopName?.text = '';
         setState(() {
+          _selectedValueSubCategory = null;
           selectedColor = null;
           _selectedValue = null;
         });
