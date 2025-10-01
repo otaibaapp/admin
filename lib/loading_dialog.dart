@@ -1,40 +1,34 @@
 import 'package:flutter/material.dart';
 
 class LoadingDialog extends StatelessWidget {
-  String msg;
-  LoadingDialog({super.key, required this.msg});
+  final String msg;
+
+  const LoadingDialog({super.key, required this.msg});
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
-      backgroundColor: Colors.black87,
-      child: Container(
-        margin: EdgeInsets.all(15),
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: Colors.black87,
-          borderRadius: BorderRadius.circular(5),
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Row(
+    return Center(
+      child: AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        content: SizedBox(
+          width: 220,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              SizedBox(
-                width: 5,
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF988561)),
               ),
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-              SizedBox(
-                width: 5,
-              ),
+              const SizedBox(height: 20),
               Text(
                 msg,
-                style: TextStyle(fontSize: 20, color: Colors.white),
-              )
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.black87,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
         ),

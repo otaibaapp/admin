@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:otaibah_app_admin/add_to_firebase_database.dart';
+import 'package:otaibah_app_admin/admin_store_editor.dart'; // ✅ أضفنا صفحة إدارة المتاجر
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,11 +16,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
+      title: 'Otaibah Admin',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF988561)),
+        useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Add To Firebase Database'),
+      home: const MyHomePage(title: 'لوحة إدارة تطبيق العتيبة'),
     );
   }
 }
@@ -36,24 +38,69 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    // ✅ كودك الأصلي بالكامل بدون حذف
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        backgroundColor: const Color(0xFF988561),
+        title: Text(
+          widget.title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          // ✅ زر جديد في الأعلى لفتح صفحة إدارة المتاجر
+          IconButton(
+            tooltip: "إدارة المتاجر",
+            icon: const Icon(Icons.store_mall_directory, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AdminStoreEditor()),
+              );
+            },
+          ),
+        ],
       ),
-      body:
-          AddToFirebaseDatabase(), // This trailing comma makes auto-formatting nicer for build methods.
+
+      // ✅ هنا الجسم الرئيسي الأصلي، ضفنا فقط زر إضافي بأسفل الصفحة
+      body: SafeArea(
+        child: Column(
+          children: [
+            // ✅ الكود الأصلي لصفحة الإضافة القديمة
+            const Expanded(
+              child: AddToFirebaseDatabase(),
+            ),
+
+            // ✅ زر جديد واضح لفتح صفحة إدارة المتجر
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF988561),
+                  foregroundColor: Colors.white,
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 30, vertical: 14),
+                  textStyle: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const AdminStoreEditor()),
+                  );
+                },
+                icon: const Icon(Icons.add_business_rounded),
+                label: const Text("إضافة متجر جديد"),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
