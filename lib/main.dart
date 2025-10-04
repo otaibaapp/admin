@@ -1,7 +1,15 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:otaibah_app_admin/add_to_firebase_database.dart';
-import 'package:otaibah_app_admin/admin_store_editor.dart'; // ✅ أضفنا صفحة إدارة المتاجر
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'auth_page.dart';
+import 'merchant_dashboard.dart';
+import 'admin_store_editor.dart';
+import 'add_to_firebase_database.dart';
+import 'super_admin_dashboard.dart';
+import 'super_admin_home.dart'; // 👈 اللوحة الجديدة الشاملة للسوبر أدمين
+import 'waiting_page.dart';   // 👈 صفحة الانتظار الجديدة
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,87 +28,115 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF988561)),
         useMaterial3: true,
+        textTheme: GoogleFonts.cairoTextTheme(
+          Theme.of(context).textTheme, // ✅ صححنا الإغلاق
+        ),
       ),
-      home: const MyHomePage(title: 'لوحة إدارة تطبيق العتيبة'),
+      home: const RootPage(),   // ✅ بره theme
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class RootPage extends StatelessWidget {
+  const RootPage({super.key});
 
-  final String title;
+  /// ✅ تحديد الصفحة المناسبة حسب بيانات المستخدم
+  Future<Widget> _getHomePage(User user) async {
+    final userRef = FirebaseDatabase.instance.ref("otaibah_users/${user.uid}");
+    final snap = await userRef.get();
 
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
+    if (!snap.exists) {
+      return const AuthPage(); // ما في بيانات → يطلب تسجيل
+    }
 
-class _MyHomePageState extends State<MyHomePage> {
+    final data = Map<String, dynamic>.from(snap.value as Map);
+    final role = data["role"];
+    final pending = data["pending"] ?? false;
+
+    // ✅ لو الحساب قيد المراجعة
+    if (pending == true) {
+      return const WaitingPage(); // 👈 استبدلنا Scaffold العادي بصفحة الانتظار
+    }
+
+    // ✅ لو سوبر أدمن
+    if (role == "super_admin") {
+      return const SuperAdminHome(); // 👈 بدل ما يكون محصور بصفحة وحدة
+    }
+
+    // ✅ لو أدمن ناشر
+    if (role == "admin") {
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF988561),
+          title: const Text("لوحة الأدمن"),
+        ),
+        body: const AddToFirebaseDatabase(),
+      );
+    }
+
+    // ✅ لو تاجر
+    if (role == "merchant") {
+      final shopId = data["shopId"];
+      if (shopId == null || shopId.toString().isEmpty) {
+        // ما عنده متجر → يضيف متجر
+        return const AdminStoreEditor();
+      } else {
+        // عنده متجر → لوحة التاجر
+        return MerchantDashboard(shopId: shopId);
+      }
+    }
+
+    // ✅ لو موظف توصيل
+    if (role == "delivery") {
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF988561),
+          title: const Text("لوحة موظف التوصيل"),
+        ),
+        body: const Center(
+          child: Text("هنا تظهر الطلبات المخصصة لموظف التوصيل"),
+        ),
+      );
+    }
+
+    // ❌ أي حالة أخرى → يرجع لتسجيل الدخول
+    return const AuthPage();
+  }
+
   @override
   Widget build(BuildContext context) {
-    // ✅ كودك الأصلي بالكامل بدون حذف
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF988561),
-        title: Text(
-          widget.title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          // ✅ زر جديد في الأعلى لفتح صفحة إدارة المتاجر
-          IconButton(
-            tooltip: "إدارة المتاجر",
-            icon: const Icon(Icons.store_mall_directory, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AdminStoreEditor()),
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        // ⏳ لسه عم نتحقق من حالة المستخدم
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // ❌ ما في مستخدم → لازم يسجل دخول
+        if (!snapshot.hasData) {
+          return const AuthPage();
+        }
+
+        // ✅ في مستخدم → نجيب بياناته من DB ونحدد الصفحة
+        final user = snapshot.data!;
+        return FutureBuilder<Widget>(
+          future: _getHomePage(user),
+          builder: (context, snap) {
+            if (snap.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
               );
-            },
-          ),
-        ],
-      ),
-
-      // ✅ هنا الجسم الرئيسي الأصلي، ضفنا فقط زر إضافي بأسفل الصفحة
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ✅ الكود الأصلي لصفحة الإضافة القديمة
-            const Expanded(
-              child: AddToFirebaseDatabase(),
-            ),
-
-            // ✅ زر جديد واضح لفتح صفحة إدارة المتجر
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF988561),
-                  foregroundColor: Colors.white,
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 30, vertical: 14),
-                  textStyle: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const AdminStoreEditor()),
-                  );
-                },
-                icon: const Icon(Icons.add_business_rounded),
-                label: const Text("إضافة متجر جديد"),
-              ),
-            ),
-          ],
-        ),
-      ),
+            }
+            if (!snap.hasData) {
+              return const AuthPage();
+            }
+            return snap.data!;
+          },
+        );
+      },
     );
   }
 }
