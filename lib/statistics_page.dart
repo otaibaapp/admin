@@ -53,7 +53,6 @@ class _StatisticsPageState extends State<StatisticsPage>
       final data = Map<dynamic, dynamic>.from(snap.value as Map);
       final all = data.values.map((v) => Map<String, dynamic>.from(v)).toList();
 
-      // استخراج الأشهر اللي فيها بيانات
       final Set<String> months = {};
       for (final o in all) {
         final ts = o["createdAt"] ?? o["timestamp"];
@@ -74,14 +73,12 @@ class _StatisticsPageState extends State<StatisticsPage>
       })
           .toList();
 
-      // تصفية الطلبات حسب الشهر الحالي
       final filtered = all.where((o) {
         final date = DateTime.fromMillisecondsSinceEpoch(
             o["createdAt"] ?? o["timestamp"] ?? 0);
         return DateFormat('yyyy_MM').format(date) == _selectedMonth;
       }).toList();
 
-      // الشهر السابق لمقارنة الأداء الذكي
       if (available.length > 1) {
         final prevId = available[1]["id"];
         final prevOrders = all.where((o) {
@@ -152,7 +149,6 @@ class _StatisticsPageState extends State<StatisticsPage>
   }
 
   double _calculateRevenueProgress(double currentRevenue) {
-    // نجيب مبيعات الشهر السابق من الطلبات الموجودة
     double prevRevenue = 0;
     for (final o in _orders) {
       final ts = o["createdAt"] ?? o["timestamp"];
@@ -168,9 +164,9 @@ class _StatisticsPageState extends State<StatisticsPage>
       }
     }
 
-    if (prevRevenue == 0) return 100; // ما في بيانات سابقة
+    if (prevRevenue == 0) return 100;
     final progress = (currentRevenue / prevRevenue) * 100;
-    return progress.clamp(0, 200); // نحدد الحد الأقصى 200٪ حتى ما يتجاوز الشريط
+    return progress.clamp(0, 200);
   }
 
 
@@ -226,11 +222,10 @@ class _StatisticsPageState extends State<StatisticsPage>
                       Colors.red,
                       Icons.cancel_outlined),
                   const SizedBox(height: 14),
-                  // ✅ مقارنة المبيعات بين هذا الشهر والشهر السابق باستخدام شريط التقدم
                   _buildProgressLine(
                     "مقارنة المبيعات مع الشهر السابق",
                     _prevSuccessRate == null
-                        ? 100 // في حال ما في بيانات سابقة، نعتبرها 100%
+                        ? 100
                         : _calculateRevenueProgress(stats["revenue"]),
                     const Color(0xFFF5C147),
                     Icons.attach_money_rounded,
