@@ -10,14 +10,15 @@ import 'package:path/path.dart';
 import 'services/notification_service.dart';
 // ✅ إضافة FCMService
 import 'services/fcm_service.dart';
-import 'auth_page.dart';
+import 'auth/admin_sign_in.dart';
+
 import 'merchant_dashboard.dart';
 import 'merchant_orders_page.dart'; // ✅ جديد
 import 'admin_store_editor.dart';
 import 'add_to_firebase_database.dart';
 import 'super_admin_dashboard.dart';
-import 'super_admin_home.dart';
 import 'waiting_page.dart';
+import 'publisher/publisher_dashboard.dart';
 
 // ✅ مفتاح التنقل العام لتوجيه المستخدم من خارج السياق
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -65,7 +66,7 @@ class RootPage extends StatelessWidget {
     final snap = await userRef.get();
 
     if (!snap.exists) {
-      return const AuthPage(); // ما في بيانات → يطلب تسجيل
+      return const AdminSignIn();
     }
 
     final data = Map<String, dynamic>.from(snap.value as Map);
@@ -77,9 +78,14 @@ class RootPage extends StatelessWidget {
       return const WaitingPage();
     }
 
+    if (role == "publisher") {
+      return const PublisherDashboard();
+    }
+
+
     // ✅ لو سوبر أدمن
     if (role == "super_admin") {
-      return const SuperAdminHome();
+      return const SuperAdminDashboard();
     }
 
     // ✅ لو أدمن ناشر
@@ -119,7 +125,7 @@ class RootPage extends StatelessWidget {
     }
 
     // ❌ أي حالة أخرى → يرجع لتسجيل الدخول
-    return const AuthPage();
+    return const AdminSignIn();
   }
 
   @override
@@ -136,7 +142,7 @@ class RootPage extends StatelessWidget {
 
         // ❌ ما في مستخدم → لازم يسجل دخول
         if (!snapshot.hasData) {
-          return const AuthPage();
+          return const AdminSignIn();
         }
 
         // ✅ في مستخدم → نجيب بياناته من DB ونحدد الصفحة
@@ -150,7 +156,7 @@ class RootPage extends StatelessWidget {
               );
             }
             if (!snap.hasData) {
-              return const AuthPage();
+              return const AdminSignIn();
             }
             return snap.data!;
           },

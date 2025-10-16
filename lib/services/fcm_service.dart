@@ -189,16 +189,21 @@ class FCMService {
   // =========================================================
   // 🟤 حفظ توكن المستخدم
   // =========================================================
+  // ✅ حفظ توكن المستخدم الجديد داخل otaibah_users بدلاً من users
   static Future<void> saveUserFcmToken() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
+
     final token = await _messaging.getToken();
-    if (token != null) {
-      final ref = FirebaseDatabase.instance.ref("users/${user.uid}/fcmToken");
-      await ref.set(token);
-      print("✅ تم حفظ توكن المستخدم بنجاح");
-    }
+    if (token == null) return;
+
+    final userRef = FirebaseDatabase.instance.ref("otaibah_users/${user.uid}");
+    await userRef.child("fcmToken").set(token);
+    await userRef.child("lastTokenSavedAt").set(ServerValue.timestamp);
+
+    print("✅ تم حفظ FCM token في otaibah_users/${user.uid}");
   }
+
 
   // =========================================================
   // ⚫ حفظ توكن التاجر

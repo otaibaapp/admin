@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:otaibah_app_admin/super_admin/banner_manager.dart'; // ✅ تأكد من المسار الصحيح
+import 'package:otaibah_app_admin/super_admin/banner_manager.dart';
+import 'package:otaibah_app_admin/super_admin/notification_requests_page.dart';
+import 'package:otaibah_app_admin/super_admin/sections/general_announcements_section.dart';
+import 'package:otaibah_app_admin/super_admin/sections/stores_section.dart';
+import 'package:otaibah_app_admin/super_admin/users/admin_accounts_page.dart';
+import 'package:otaibah_app_admin/super_admin/users/user_accounts_page.dart';
+import '../services/notification_sender.dart';
 
 class SuperAdminDashboard extends StatefulWidget {
   const SuperAdminDashboard({super.key});
@@ -25,7 +31,6 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
   @override
   void initState() {
     super.initState();
-    _loadUsers();
   }
 
   Future<void> _loadUsers() async {
@@ -42,8 +47,14 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
 
   Future<void> _approveUser(String uid) async {
     await _usersRef.child(uid).update({"pending": false});
+    try {
+      await NotificationSender.sendAccountApprovalNotification(uid);
+      print("✅ تم إرسال إشعار الموافقة للمستخدم $uid");
+    } catch (e) {
+      print("⚠️ فشل إرسال إشعار الموافقة: $e");
+    }
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("✅ تم تفعيل الحساب")),
+      const SnackBar(content: Text("✅ تم تفعيل الحساب وإرسال إشعار للمستخدم")),
     );
     _loadUsers();
   }
@@ -64,73 +75,256 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     _loadUsers();
   }
 
-  // 🧱 واجهة جميلة منظمة بالأقسام
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F8F8),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF988561),
-        foregroundColor: Colors.white,
-        title: const Text("لوحة السوبر أدمن"),
-        centerTitle: true,
+  // ✅ الكرت الترحيبي الجميل
+  Widget _welcomeCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      margin: const EdgeInsets.only(bottom: 18),
+      decoration: BoxDecoration(
+        color: const Color(0x10000000),
+        borderRadius: BorderRadius.circular(16),
+
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "إدارة النظام",
-            textDirection: TextDirection.rtl,
+          Text(
+            "أهلاً وسهلاً بالمدير العام 👋",
             style: TextStyle(
-              color: Colors.black54,
-              fontSize: 15,
+              color: Colors.black,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
+              height: 1.4,
             ),
           ),
-          const SizedBox(height: 8),
-
-          // ✅ إدارة صلاحيات الحسابات
-          _AdminSectionCard(
-            color: const Color(0xFF988561),
-            icon: Icons.security,
-            title: "إدارة صلاحيات الحسابات",
-            description: "تحكم بصلاحيات المستخدمين (تاجر، موظف، أدمن...)",
-            onTap: () {
-              _showUsersDialog(context);
-            },
-          ),
-          const SizedBox(height: 10),
-
-          // ✅ إدارة الإعلانات (البانرات)
-          _AdminSectionCard(
-            color: const Color(0xFF0088CC),
-            icon: Icons.campaign_outlined,
-            title: "إدارة الإعلانات (البانرات)",
-            description: "أضف أو عدّل البانرات الظاهرة في التطبيق",
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const BannerManager()),
-              );
-            },
-          ),
-          const SizedBox(height: 10),
-
-          // ✅ إدارة المستخدمين
-          _AdminSectionCard(
-            color: const Color(0xFF4CAF50),
-            icon: Icons.people,
-            title: "إدارة المستخدمين",
-            description: "استعرض جميع المستخدمين المسجلين وتحقق منهم",
-            onTap: () => _showUsersDialog(context),
+          SizedBox(height: 6),
+          Text(
+            "يسعدنا تواجدك اليوم! يمكنك إدارة المتاجر والمستخدمين والإعلانات والسوق المفتوح بكل سهولة واحترافية.",
+            style: TextStyle(color: Colors.black, fontSize: 14, height: 1.5),
           ),
         ],
       ),
     );
   }
 
-  // 📋 نافذة منبثقة لعرض المستخدمين بنفس النظام القديم
-  void _showUsersDialog(BuildContext context) {
+  // ✅ كرت تصميم واحد لكل قسم
+  Widget _buildDashboardCard({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 5,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: color.withOpacity(0.12),
+              child: Icon(icon, color: color, size: 26),
+            ),
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                  height: 1.3,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ✅ واجهة السوبر أدمن بعد التعديل
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8F8F8),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 1,
+          centerTitle: true,
+          title: const Text(
+            "لوحة السوبر أدمن",
+            style: TextStyle(
+              color: Colors.black87,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+          leading: IconButton(
+            icon: const Icon(Icons.logout, color: Colors.black87),
+            tooltip: "تسجيل الخروج",
+            onPressed: () async {
+              await FirebaseDatabase.instance.goOffline();
+              // أو استخدم FirebaseAuth.instance.signOut() إذا عندك تسجيل دخول بالإيميل
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("تم تسجيل الخروج"),
+                  backgroundColor: Colors.redAccent,
+                ),
+              );
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            },
+          ),
+        ),
+
+        body: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              _welcomeCard(),
+              Expanded(
+                child: GridView.count(
+                  crossAxisCount: 3, // ✅ ثلاث كروت في الصف الواحد
+                  mainAxisSpacing: 14,
+                  crossAxisSpacing: 14,
+                  childAspectRatio: 0.95,
+                  children: [
+                    _buildDashboardCard(
+                      title: "إدارة صلاحيات الحسابات",
+                      icon: Icons.security_rounded,
+                      color: const Color(0xFF988561),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AdminAccountsPage()),
+                        );
+                      },
+                    ),
+                    _buildDashboardCard(
+                      title: "إدارة المستخدمين",
+                      icon: Icons.people_alt_rounded,
+                      color: const Color(0xFF4CAF50),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const UserAccountsPage()),
+                        );
+                      },
+                    ),
+                    _buildDashboardCard(
+                      title: "إدارة الإعلانات (البانرات)",
+                      icon: Icons.image_rounded,
+                      color: Colors.teal,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const BannerManager()),
+                        );
+                      },
+                    ),
+                    _buildDashboardCard(
+                      title: "طلبات الإشعارات العامة",
+                      icon: Icons.notifications_active_rounded,
+                      color: Colors.orange,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) =>
+                              const NotificationRequestsPage()),
+                        );
+                      },
+                    ),
+                    _buildDashboardCard(
+                      title: "المتاجر",
+                      icon: Icons.storefront_rounded,
+                      color: const Color(0xFF0088CC),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const StoresSection()),
+                        );
+                      },
+                    ),
+                    _buildDashboardCard(
+                      title: "المنتجات",
+                      icon: Icons.inventory_2_rounded,
+                      color: Colors.deepPurple,
+                      onTap: () {
+                        // ✅ إدارة المنتجات لاحقاً
+                      },
+                    ),
+                    _buildDashboardCard(
+                      title: "السوق المفتوح",
+                      icon: Icons.shopping_bag_rounded,
+                      color: const Color(0xFF795548),
+                      onTap: () {
+                        // ✅ إدارة السوق المفتوح لاحقاً
+                      },
+                    ),
+                    _buildDashboardCard(
+                      title: "الإعلانات العامة",
+                      icon: Icons.campaign_rounded,
+                      color: Colors.blueAccent,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const GeneralAnnouncementsSection()),
+                        );
+                      },
+                    ),
+
+                    _buildDashboardCard(
+                      title: "العناصر المخفية",
+                      icon: Icons.visibility_off_rounded,
+                      color: Colors.grey.shade800,
+                      onTap: () {
+                        // ✅ قائمة العناصر المخفية لاحقاً
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ✅ نافذة المستخدمين (كما كانت)
+  void _showUsersDialog(BuildContext context) async {
+    setState(() => _loading = true);
+
+    // ✅ نحمل المستخدمين فقط عند فتح النافذة
+    final snap = await _usersRef.get();
+    if (snap.exists) {
+      _users = Map<String, dynamic>.from(snap.value as Map);
+    } else {
+      _users = {};
+    }
+
+    setState(() => _loading = false);
+
+    if (!mounted) return;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -150,7 +344,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 : ListView(
               children: _users.entries.map((entry) {
                 final uid = entry.key;
-                final user = Map<String, dynamic>.from(entry.value);
+                final user =
+                Map<String, dynamic>.from(entry.value);
                 final email = user["email"] ?? "بدون بريد";
                 final name = user["name"] ?? "مجهول";
                 final role = user["role"] ?? "غير محدد";
@@ -191,7 +386,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                         child: Text(r["label"]!),
                       ))
                           .toList(),
-                      hint: const Text("اختر دور المستخدم"),
+                      hint:
+                      const Text("اختر دور المستخدم"),
                       onChanged: (val) {
                         if (val != null && val != role) {
                           _updateRole(uid, val);
@@ -207,85 +403,5 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
       },
     );
   }
-}
 
-// 👇 كرت مخصص للأقسام (نفس ستايل التاجر اللي بالصورة)
-class _AdminSectionCard extends StatelessWidget {
-  final Color color;
-  final IconData icon;
-  final String title;
-  final String description;
-  final VoidCallback onTap;
-
-  const _AdminSectionCard({
-    required this.color,
-    required this.icon,
-    required this.title,
-    required this.description,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 26),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    textDirection: TextDirection.rtl,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    description,
-                    textDirection: TextDirection.rtl,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.black54,
-                      height: 1.3,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.arrow_back_ios_rounded,
-                size: 18, color: Colors.black45),
-          ],
-        ),
-      ),
-    );
-  }
 }
